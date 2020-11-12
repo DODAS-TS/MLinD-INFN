@@ -1,0 +1,15 @@
+version: '3.7'
+services:
+  jupyterhub:
+    build: . 
+    volumes:
+    - /var/run/docker.sock:/var/run/docker.sock
+    ports:
+    - 8888:8888
+    environment:
+    - OAUTH_ENDPOINT=https://iam.cloud.infn.it
+    - OAUTH_CALLBACK_URL=http://131.154.97.191:8888/hub/oauth_callback
+
+networks:
+  default:
+    name: jupyterhub
