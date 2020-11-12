@@ -49,7 +49,7 @@ c.GenericOAuthenticator.oauth_callback_url = callback
 
 # PUT IN SECRET
 c.GenericOAuthenticator.client_id = client_id
-c.GenericOAuthenticator.client_secret = client_secret 
+c.GenericOAuthenticator.client_secret = client_secret
 c.GenericOAuthenticator.authorize_url = iam_server.strip('/') + '/authorize'
 c.GenericOAuthenticator.token_url = iam_server.strip('/') + '/token'
 c.GenericOAuthenticator.userdata_url = iam_server.strip('/') + '/userinfo'
@@ -81,7 +81,7 @@ class CustomSpawner(dockerspawner.DockerSpawner):
         <label for="stack">Select your desired image:</label>
   <input list="images" name="img">
   <datalist id="images">
-    <option value="dciangot/test:latest">Tensorflow</option>
+    <option value="dodasts/mlind-tensorflow-nb:latest">Tensorflow</option>
   </datalist>
 <br>
         <label for="mem">Select your desired memory size:</label>
@@ -146,7 +146,7 @@ class CustomSpawner(dockerspawner.DockerSpawner):
         obj = yield self.docker("create_container", **create_kwargs)
         return obj
 
-c.JupyterHub.spawner_class = CustomSpawner 
+c.JupyterHub.spawner_class = CustomSpawner
 
 # Spawn containers from this image
 #c.DockerSpawner.container_image = 'tensorflow/tensorflow:latest-gpu-jupyter'
@@ -166,7 +166,7 @@ device_request = {
             'Capabilities': [['gpu']],  # not sure which capabilities are really needed
             'Count': 1,  # enable all gpus
 }
-c.DockerSpawner.extra_host_config = { 
+c.DockerSpawner.extra_host_config = {
                                       'device_requests': [device_request]
                                     }
 c.DockerSpawner.network_name = 'jupyterhub'
@@ -194,7 +194,7 @@ c.DockerSpawner.debug = True
 
 #  This is the address on which the proxy will bind. Sets protocol, ip, base_url
 c.JupyterHub.bind_url = 'http://:8888'
-c.JupyterHub.hub_ip = '0.0.0.0' 
+c.JupyterHub.hub_ip = '0.0.0.0'
 c.JupyterHub.hub_connect_ip = 'jupyterhub'
 
 c.Authenticator.allowed_users = {'test'}
