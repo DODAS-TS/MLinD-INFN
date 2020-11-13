@@ -77,6 +77,32 @@ git clone https://github.com/dodas-ts/MLinD-INFN
 cd MLinD-INFN
 ```
 
+Compile the docker-compose.yaml file with your preferences:
+
+```yaml
+version: '3.7'
+services:
+  jupyterhub:
+    build: .
+    command:
+      - /opt/conda/bin/python
+      - /opt/conda/bin/jupyterhub
+      - --debug
+    volumes:
+    - /var/run/docker.sock:/var/run/docker.sock
+    ports:
+    - 8888:8888
+    environment:
+    - OAUTH_ENDPOINT=https://iam.cloud.infn.it
+    - OAUTH_CALLBACK_URL=http://<HERE pub ip of the server>:8888/hub/oauth_callback
+    - OAUTH_GROUPS=group1 group2
+    - WITH_GPU=true
+
+networks:
+  default:
+    name: jupyterhub
+```
+
 Bring up your hub server with:
 
 ```bash
