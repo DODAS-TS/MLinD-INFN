@@ -7,6 +7,20 @@ import warnings
 from tornado import gen
 from oauthenticator.oauth2 import OAuthenticator
 from oauthenticator.generic import GenericOAuthenticator
+import json
+import os
+import base64
+import urllib
+
+from tornado.auth import OAuth2Mixin
+from tornado import web
+
+from tornado.httputil import url_concat
+from tornado.httpclient import HTTPRequest, AsyncHTTPClient
+
+from jupyterhub.auth import LocalAuthenticator
+
+from traitlets import Unicode, Dict, Bool, Union, default, observe
 
 
 c = get_config()
@@ -40,9 +54,26 @@ class EnvAuthenticator(GenericOAuthenticator):
             # user has no auth state
             return
         # define some environment variables from auth_state
+        self.log.info(auth_state)
         spawner.environment['ACCESS_TOKEN'] = auth_state['access_token']
         spawner.environment['REFRESH_TOKEN'] = auth_state['refresh_token']
         spawner.environment['USERNAME'] = auth_state['oauth_user']['preferred_username']
+        spawner.environment['GROUPS'] = " ".join(auth_state['oauth_user']['groups'])
+
+        allowed_groups = os.environ["OAUTH_GROUPS"].split(" ")
+        amIAllowed = False
+
+        self.log.info(auth_state['oauth_user']['groups'])
+        for gr in allowed_groups:
+            if gr in auth_state['oauth_user']['groups']:
+                amIAllowed = True
+
+        if not amIAllowed:
+                self.log.error(
+                    "OAuth user contains not in group the allowed groups %s" % allowed_groups
+                )
+                raise Exception("OAuth user not in the allowed groups %s" % allowed_groups)
+
 
 c.JupyterHub.authenticator_class = EnvAuthenticator
 c.GenericOAuthenticator.oauth_callback_url = callback
@@ -166,9 +197,10 @@ device_request = {
             'Capabilities': [['gpu']],  # not sure which capabilities are really needed
             'Count': 1,  # enable all gpus
 }
-c.DockerSpawner.extra_host_config = {
+if os.environ["WITH_GPU"] == "true":
+    c.DockerSpawner.extra_host_config = {
                                       'device_requests': [device_request]
-                                    }
+                                        }
 c.DockerSpawner.network_name = 'jupyterhub'
 
 
