@@ -18,12 +18,13 @@ RUN bash Anaconda3-2020.02-Linux-x86_64.sh
 RUN conda install -c plotly plotly-orca
 RUN apt-get install -y xvfb.
 
+# Install & config R kernel for Jupyter
 RUN apt-get install -y r-base
-#  vim install.r
-#  Rscript install.r 
+RUN echo "install.packages('IRkernel') \n IRkernel::installspec()" install.r
+RUN  Rscript install.r 
 
 RUN pip3 install arviz
 RUN pip3 install rpy2
-RUN pip3 install pip install pymc3
+RUN pip3 install pymc3
 
 
