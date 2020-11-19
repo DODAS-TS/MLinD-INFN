@@ -1,8 +1,5 @@
 FROM tensorflow/tensorflow:latest-gpu-jupyter
 
-#RUN /usr/bin/python3 -m pip install --upgrade pip
-
-#RUN pip3 --no-cache-dir install jupyterhub pandas numpy matplotlib scipy iminuit plotly
 RUN apt install -y wget
 RUN wget https://repo.anaconda.com/archive/Anaconda3-2020.02-Linux-x86_64.sh
 RUN bash Anaconda3-2020.02-Linux-x86_64.sh -b
@@ -32,9 +29,7 @@ RUN R --version
 RUN add-apt-repository ppa:marutter/c2d4u3.5
 RUN apt update
 RUN apt install -y r-cran-rgl r-cran-rjags r-cran-snow r-cran-ggplot2 r-cran-igraph r-cran-lme4 r-cran-rjava r-cran-devtools r-cran-roxygen2 r-cran-rjava r-cran-xlsx
+RUN conda install -c plotly plotly-orca jupyterhub pandas numpy matplotlib scipy iminuit plotly arviz rpy2 pymc3
 RUN echo -e "install.packages('IRkernel')\nIRkernel::installspec()\ninstall.packages('EpiEstim')" > install.r
 RUN Rscript install.r
-
-#RUN pip3 --no-cache-dir install arviz rpy2 pymc3
-RUN conda install -c plotly plotly-orca jupyterhub pandas numpy matplotlib scipy iminuit plotly arviz rpy2 pymc3
 
