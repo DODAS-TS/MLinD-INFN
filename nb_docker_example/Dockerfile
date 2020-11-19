@@ -26,10 +26,13 @@ RUN apt update
 ARG DEBIAN_FRONTEND=noninteractive
 RUN apt install -y r-base r-base-core r-recommended
 RUN R --version
+RUN conda install -c plotly plotly-orca && conda clean --all -f -y
+RUN pip install --no-cache-dir jupyterhub pandas numpy matplotlib scipy iminuit plotly arviz rpy2 pymc3
+
 RUN add-apt-repository ppa:marutter/c2d4u3.5
 RUN apt update
 RUN apt install -y r-cran-rgl r-cran-rjags r-cran-snow r-cran-ggplot2 r-cran-igraph r-cran-lme4 r-cran-rjava r-cran-devtools r-cran-roxygen2 r-cran-rjava r-cran-xlsx
-RUN conda install -c plotly plotly-orca jupyterhub pandas numpy matplotlib scipy iminuit plotly arviz rpy2 pymc3
-RUN echo -e "install.packages('IRkernel')\nIRkernel::installspec()\ninstall.packages('EpiEstim')" > install.r
-RUN Rscript install.r
+RUN R -e "install.packages('IRkernel')"
+RUN R -e "IRkernel::installspec()"
+RUN R -e "install.packages('EpiEstim')"
 
