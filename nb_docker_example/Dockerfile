@@ -36,3 +36,10 @@ RUN R -e "install.packages('IRkernel')"
 RUN R -e "IRkernel::installspec()"
 RUN R -e "install.packages('EpiEstim')"
 
+# Automount S3 with sts-wire
+COPY ./jupyterhub-singleuser /root/anaconda3/bin/jupyterhub-singleuser
+RUN chmod +x /root/anaconda3/bin/jupyterhub-singleuser
+
+RUN mkdir -p .init
+RUN wget https://github.com/dciangot/sts-wire/releases/download/v0.0.7/sts-wire -O ./.init/sts-wire && chmod +x ./.init/sts-wire
+COPY ./spawn.sh ./.init/spawn.sh
