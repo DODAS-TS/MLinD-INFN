@@ -199,10 +199,22 @@ device_request = {
 }
 if os.environ["WITH_GPU"] == "true":
     c.DockerSpawner.extra_host_config = {
-                                      'device_requests': [device_request]
+                    "cap_add": [
+                                        "SYS_ADMIN"
+                                    ],
+                    "privileged": True,
+                                              'device_requests': [device_request]
+                                        }
+else:
+    c.DockerSpawner.extra_host_config = {
+                    "cap_add": [
+                                        "SYS_ADMIN"
+                                    ],
+                    "privileged": True
                                         }
 c.DockerSpawner.network_name = 'jupyterhub'
 
+c.DockerSpawner.http_timeout = 600
 
 # Explicitly set notebook directory because we'll be mounting a host volume to
 # it.  Most jupyter/docker-stacks *-notebook images run the Notebook server as

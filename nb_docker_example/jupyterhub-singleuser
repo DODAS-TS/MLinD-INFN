@@ -1,5 +1,5 @@
 #!/bin/sh
-'''exec' /opt/conda/bin/python "$0" "$@"
+'''exec' /root/anaconda3/bin/python "$0" "$@"
 ' '''
 # -*- coding: utf-8 -*-
 import re
