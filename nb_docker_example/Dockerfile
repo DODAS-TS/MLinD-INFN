@@ -10,9 +10,12 @@ ENV PATH /root/anaconda3/bin:$PATH
 # Updating Anaconda packages
 RUN conda update conda
 RUN conda update anaconda
-RUN conda update --all
+# Better protect and update only when sure
+# RUN conda update --all
 
 RUN apt-get install -y xvfb
+
+RUN apt-get install -y libgtk-3-dev
 
 # Install & config R kernel for Jupyter
 # RUN apt-get install -y r-base
