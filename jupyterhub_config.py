@@ -112,6 +112,7 @@ class CustomSpawner(dockerspawner.DockerSpawner):
         <label for="stack">Select your desired image:</label>
   <input list="images" name="img">
   <datalist id="images">
+    <option value="dodasts/covidstat:v1.2">CovidStat-IMG</option>
     <option value="dodasts/mlind-tensorflow-nb:latest">Tensorflow</option>
   </datalist>
 <br>
@@ -120,6 +121,9 @@ class CustomSpawner(dockerspawner.DockerSpawner):
   <option value="4G">4GB</option>
   <option value="8G"> 8GB </option>
   <option value="16G"> 16GB </option>
+  <option value="32G"> 32GB </option>
+  <option value="64G"> 64GB </option>
+  <option value="128G"> 128GB </option>
 </select>
 
         """
