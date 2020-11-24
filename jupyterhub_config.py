@@ -32,16 +32,33 @@ os.environ["OAUTH_CALLBACK"] = callback
 iam_server = os.environ["OAUTH_ENDPOINT"]
 
 server_host = socket.gethostbyname(socket.getfqdn())
-# TODO: run self registration then
-#./.init/dodas-IAMClientRec
 os.environ["IAM_INSTANCE"] = iam_server
+
+c.Spawner.default_url = '/lab'
 
 myenv = os.environ.copy()
 
-response = subprocess.check_output(['./.init/dodas-IAMClientRec', server_host], env=myenv)
-response_list = response.decode('utf-8').split("\n")
-client_id = response_list[len(response_list)-3]
-client_secret = response_list[len(response_list)-2]
+cache_file = '/srv/jupyterhub/cookies/iam_secret'
+
+if os.path.isfile(cache_file):
+    with open(cache_file) as f:
+        cache_results = json.load(f)
+else:
+    response = subprocess.check_output(['./.init/dodas-IAMClientRec', server_host], env=myenv)
+    response_list = response.decode('utf-8').split("\n")
+    client_id = response_list[len(response_list)-3]
+    client_secret = response_list[len(response_list)-2]
+
+    cache_results = {
+        "client_id": client_id,
+        "client_secret": client_secret
+    }
+    with open(cache_file, "w") as w:
+        json.dump(cache_results, w)
+
+client_id = cache_results["client_id"]
+client_secret = cache_results["client_secret"]
+
 
 class EnvAuthenticator(GenericOAuthenticator):
 
@@ -55,10 +72,13 @@ class EnvAuthenticator(GenericOAuthenticator):
             return
         # define some environment variables from auth_state
         self.log.info(auth_state)
+        spawner.environment['IAM_CLIENT_ID'] = client_id
+        spawner.environment['IAM_CLIENT_SECRET'] = client_secret
         spawner.environment['ACCESS_TOKEN'] = auth_state['access_token']
         spawner.environment['REFRESH_TOKEN'] = auth_state['refresh_token']
         spawner.environment['USERNAME'] = auth_state['oauth_user']['preferred_username']
         spawner.environment['GROUPS'] = " ".join(auth_state['oauth_user']['groups'])
+        spawner.environment['JUPYTERHUB_ACTIVITY_INTERVAL'] = "15"
 
         allowed_groups = os.environ["OAUTH_GROUPS"].split(" ")
         amIAllowed = False
@@ -78,6 +98,8 @@ class EnvAuthenticator(GenericOAuthenticator):
 c.JupyterHub.authenticator_class = EnvAuthenticator
 c.GenericOAuthenticator.oauth_callback_url = callback
 
+c.JupyterHub.db_url = 'sqlite:///db/jupyterhub.sqlite'
+
 # PUT IN SECRET
 c.GenericOAuthenticator.client_id = client_id
 c.GenericOAuthenticator.client_secret = client_secret
@@ -95,14 +117,15 @@ if 'JUPYTERHUB_CRYPT_KEY' not in os.environ:
     )
     c.CryptKeeper.keys = [ os.urandom(32) ]
 
-#c.JupyterHub.tornado_settings = {'max_body_size': 1048576000, 'max_buffer_size': 1048576000}
 c.JupyterHub.log_level = 30
 
-#c.ConfigurableHTTPProxy.debug = True
+c.JupyterHub.cookie_secret_file = '/srv/jupyterhub/cookies/jupyterhub_cookie_secret'
 
-# We rely on environment variables to configure JupyterHub so that we
-# avoid having to rebuild the JupyterHub container every time we change a
-# configuration parameter.
+c.ConfigurableHTTPProxy.debug = True
+c.JupyterHub.cleanup_servers = False
+c.ConfigurableHTTPProxy.should_start = False
+c.ConfigurableHTTPProxy.auth_token = "testme"
+c.ConfigurableHTTPProxy.api_url = 'http://http_proxy:8001'
 
 
 # Spawn single-user servers as Docker containers
@@ -122,7 +145,13 @@ class CustomSpawner(dockerspawner.DockerSpawner):
   <option value="16G"> 16GB </option>
 </select>
 
-        """
+<br>
+        <label for="gpu">GPU:</label>
+        <select name="gpu" size="1">
+  <option value="Y">Yes</option>
+  <option value="N"> No </option>
+</select>
+"""
 
     def options_from_form(self, formdata):
         options = {}
@@ -133,6 +162,29 @@ class CustomSpawner(dockerspawner.DockerSpawner):
         options['mem'] = formdata['mem']
         memory = ''.join(formdata['mem'])
         self.mem_limit = memory
+        options['gpu'] = formdata['gpu']
+        use_gpu = True if ''.join(formdata['gpu'])=="Y" else False
+        device_request = {}
+        if use_gpu:
+            device_request = {
+                'Driver': 'nvidia',
+                'Capabilities': [['gpu']],  # not sure which capabilities are really needed
+                'Count': 1,  # enable all gpus
+            }
+            self.extra_host_config = {
+                "cap_add": [
+                      "SYS_ADMIN"
+                ],
+                "privileged": True,
+                'device_requests': [device_request]
+            }
+        else:
+            self.extra_host_config = {
+                "cap_add": [
+                      "SYS_ADMIN"
+                ],
+                "privileged": True
+            }
         return options
 
 
@@ -179,51 +231,23 @@ class CustomSpawner(dockerspawner.DockerSpawner):
 
 c.JupyterHub.spawner_class = CustomSpawner
 
-# Spawn containers from this image
-#c.DockerSpawner.container_image = 'tensorflow/tensorflow:latest-gpu-jupyter'
-#c.DockerSpawner.image = 'dciangot/test:latest'
-
-spawn_cmd = os.environ.get('DOCKER_SPAWN_CMD', "jupyterhub-singleuser --port 8889 --ip 0.0.0.0 --allow-root --debug")
+# Default spawn to jupyterLab
+spawn_cmd = os.environ.get('DOCKER_SPAWN_CMD', "jupyter-labhub --port 8889 --ip 0.0.0.0 --allow-root --debug")
+# uncomment to start a jupyter NB instead of jupyterlab
+#spawn_cmd = os.environ.get('DOCKER_SPAWN_CMD', "jupyterhub-singleuser --port 8889 --ip 0.0.0.0 --allow-root --debug")
 
 c.DockerSpawner.port = 8889
 c.DockerSpawner.extra_create_kwargs.update({ 'command': spawn_cmd })
 
-#c.DockerSpawner.use_internal_ip = True
-#network_name = os.environ['DOCKER_NETWORK_NAME']
-#c.DockerSpawner.network_name = network_name
-# Pass the network name as argument to spawned containers
-device_request = {
-            'Driver': 'nvidia',
-            'Capabilities': [['gpu']],  # not sure which capabilities are really needed
-            'Count': 1,  # enable all gpus
-}
-if os.environ["WITH_GPU"] == "true":
-    c.DockerSpawner.extra_host_config = {
-                    "cap_add": [
-                                        "SYS_ADMIN"
-                                    ],
-                    "privileged": True,
-                                              'device_requests': [device_request]
-                                        }
-else:
-    c.DockerSpawner.extra_host_config = {
-                    "cap_add": [
-                                        "SYS_ADMIN"
-                                    ],
-                    "privileged": True
-                                        }
 c.DockerSpawner.network_name = 'jupyterhub'
 
 c.DockerSpawner.http_timeout = 600
 
-# Explicitly set notebook directory because we'll be mounting a host volume to
-# it.  Most jupyter/docker-stacks *-notebook images run the Notebook server as
-# user `jovyan`, and set the notebook directory to `/home/jovyan/work`.
 # We follow the same convention.
-notebook_dir = os.environ.get('DOCKER_NOTEBOOK_DIR') or '/home/jovyan/work'
+notebook_dir = os.environ.get('DOCKER_NOTEBOOK_DIR') or '/tf'
 c.DockerSpawner.notebook_dir = notebook_dir
 
-notebook_dir = os.environ.get('DOCKER_NOTEBOOK_DIR') or '/home/jovyan/work'
+notebook_dir = os.environ.get('DOCKER_NOTEBOOK_DIR') or '/tf'
 c.DockerSpawner.notebook_dir = notebook_dir
 # Mount the real user's Docker volume on the host to the notebook user's
 # notebook directory in the container
@@ -235,11 +259,7 @@ c.DockerSpawner.remove_containers = True
 # For debugging arguments passed to spawned containers
 c.DockerSpawner.debug = True
 
-
-#  This is the address on which the proxy will bind. Sets protocol, ip, base_url
-c.JupyterHub.bind_url = 'http://:8888'
-c.JupyterHub.hub_ip = '0.0.0.0'
+c.JupyterHub.hub_bind_url = 'http://:8088'
 c.JupyterHub.hub_connect_ip = 'jupyterhub'
 
-c.Authenticator.allowed_users = {'test'}
-
+#c.Authenticator.allowed_users = {'test'}
