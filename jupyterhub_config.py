@@ -72,28 +72,31 @@ class EnvAuthenticator(GenericOAuthenticator):
             return
         # define some environment variables from auth_state
         self.log.info(auth_state)
+        spawner.environment['IAM_SERVER'] = iam_server
         spawner.environment['IAM_CLIENT_ID'] = client_id
         spawner.environment['IAM_CLIENT_SECRET'] = client_secret
         spawner.environment['ACCESS_TOKEN'] = auth_state['access_token']
         spawner.environment['REFRESH_TOKEN'] = auth_state['refresh_token']
         spawner.environment['USERNAME'] = auth_state['oauth_user']['preferred_username']
-        spawner.environment['GROUPS'] = " ".join(auth_state['oauth_user']['groups'])
         spawner.environment['JUPYTERHUB_ACTIVITY_INTERVAL'] = "15"
 
-        allowed_groups = os.environ["OAUTH_GROUPS"].split(" ")
         amIAllowed = False
 
-        self.log.info(auth_state['oauth_user']['groups'])
-        for gr in allowed_groups:
-            if gr in auth_state['oauth_user']['groups']:
-                amIAllowed = True
+        if os.environ.get("OAUTH_GROUPS"):
+            spawner.environment['GROUPS'] = " ".join(auth_state['oauth_user']['groups'])
+            allowed_groups = os.environ["OAUTH_GROUPS"].split(" ")
+            self.log.info(auth_state['oauth_user']['groups'])
+            for gr in allowed_groups:
+                if gr in auth_state['oauth_user']['groups']:
+                    amIAllowed = True
+        else:
+            amIAllowed = True
 
         if not amIAllowed:
                 self.log.error(
                     "OAuth user contains not in group the allowed groups %s" % allowed_groups
                 )
                 raise Exception("OAuth user not in the allowed groups %s" % allowed_groups)
-
 
 c.JupyterHub.authenticator_class = EnvAuthenticator
 c.GenericOAuthenticator.oauth_callback_url = callback

@@ -12,7 +12,11 @@ RUN conda update conda
 RUN conda update anaconda
 RUN conda update --all
 
-RUN apt-get install -y xvfb
+RUN apt-get install -y xvfb \
+    && apt-key adv --keyserver hkp://pgp.surfnet.nl --recv-keys ACDFB08FDC962044D87FF00B512839863D487A87 \
+    && add-apt-repository "deb http://repo.data.kit.edu/ubuntu/bionic ./" \
+    && apt-get update \
+    && apt-get install -y oidc-agent
 
 # Install & config R kernel for Jupyter
 # RUN apt-get install -y r-base
