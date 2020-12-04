@@ -3,7 +3,7 @@ services:
   jupyterhub:
     build: .
     command:
-      - /usr/bin/python3
+      - /opt/conda/bin/python3
       - /usr/local/bin/jupyterhub
       - --debug
     volumes:
