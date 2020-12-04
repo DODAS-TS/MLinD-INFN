@@ -4,7 +4,7 @@ services:
     build: .
     command:
       - /opt/conda/bin/python3
-      - /usr/local/bin/jupyterhub
+      - /opt/conda/bin/jupyterhub
       - --debug
     volumes:
     - /var/run/docker.sock:/var/run/docker.sock
