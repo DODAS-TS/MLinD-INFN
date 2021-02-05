@@ -1,0 +1,17 @@
+{
+	"ulid": "01EXSZX70FVM2NJ2Y01G051VE1",
+	"minTime": 1612548000000,
+	"maxTime": 1612555200000,
+	"stats": {
+		"numSamples": 216660,
+		"numSeries": 3611,
+		"numChunks": 3611
+	},
+	"compaction": {
+		"level": 1,
+		"sources": [
+			"01EXSZX70FVM2NJ2Y01G051VE1"
+		]
+	},
+	"version": 1
+}
